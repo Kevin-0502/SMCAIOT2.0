@@ -11,7 +11,8 @@ import com.example.smcaiot.R
 import com.example.smcaiot.models.EntityResponse
 
 class EntityAdapter(
-    private var entities: List<EntityResponse> = emptyList()
+    private var entities: List<EntityResponse> = emptyList(),
+    private val onItemClick: (EntityResponse) -> Unit = {}
 ) : RecyclerView.Adapter<EntityAdapter.EntityViewHolder>() {
 
     fun updateData(newEntities: List<EntityResponse>) {
@@ -26,7 +27,10 @@ class EntityAdapter(
     }
 
     override fun onBindViewHolder(holder: EntityViewHolder, position: Int) {
-        holder.bind(entities[position])
+        val entity = entities[position]
+            holder.bind(entity)
+            holder.itemView.setOnClickListener { onItemClick(entity) }
+
     }
 
     override fun getItemCount(): Int = entities.size
@@ -43,54 +47,58 @@ class EntityAdapter(
         private val tvTimeInstant: TextView = itemView.findViewById(R.id.tvTimeInstant)
 
         fun bind(entity: EntityResponse) {
-            tvEntityId.text = entity.id
-            tvType.text = "Tipo: ${entity.type}"
-            tvLevel.text = "Nivel: ${entity.level}"
 
-            // Color indicator
-            try {
-                viewColorIndicator.setBackgroundColor(Color.parseColor(entity.color))
-            } catch (e: Exception) {
-                viewColorIndicator.setBackgroundColor(Color.GRAY)
-            }
 
-            // Device name
-            if (!entity.deviceName.isNullOrEmpty()) {
-                tvDeviceName.text = "Dispositivo: ${entity.deviceName}"
-                tvDeviceName.visibility = View.VISIBLE
-            } else {
-                tvDeviceName.visibility = View.GONE
-            }
+                tvEntityId.text = entity.id
+                tvType.text = "Tipo: ${entity.type}"
+                tvLevel.text = "Nivel: ${entity.level}"
 
-            // Address
-            if (!entity.address.isNullOrEmpty()) {
-                tvAddress.text = entity.address
-                tvAddress.visibility = View.VISIBLE
-            } else {
-                tvAddress.visibility = View.GONE
-            }
-
-            // Highest alert
-            if (!entity.highestAlertName.isNullOrEmpty()) {
-                tvHighestAlert.text = "⚠ Alerta: ${entity.highestAlertName} (${entity.highestAlertVariable})"
-                tvHighestAlert.visibility = View.VISIBLE
-            } else {
-                tvHighestAlert.visibility = View.GONE
-            }
-
-            // Variables
-            llVariables.removeAllViews()
-            entity.variables.forEach { variable ->
-                val tv = TextView(itemView.context).apply {
-                    text = "  • ${variable.name}: ${variable.value ?: "N/A"}"
-                    textSize = 12f
-                    setTextColor(Color.parseColor("#666666"))
+                // Color indicator
+                try {
+                    viewColorIndicator.setBackgroundColor(Color.parseColor(entity.color))
+                } catch (e: Exception) {
+                    viewColorIndicator.setBackgroundColor(Color.GRAY)
                 }
-                llVariables.addView(tv)
-            }
 
-            // Timestamp
-            tvTimeInstant.text = entity.timeInstant ?: ""
+                // Device name
+                if (!entity.deviceName.isNullOrEmpty()) {
+                    tvDeviceName.text = "Dispositivo: ${entity.deviceName}"
+                    tvDeviceName.visibility = View.VISIBLE
+                } else {
+                    tvDeviceName.visibility = View.GONE
+                }
+
+                // Address
+                if (!entity.address.isNullOrEmpty()) {
+                    tvAddress.text = entity.address
+                    tvAddress.visibility = View.VISIBLE
+                } else {
+                    tvAddress.visibility = View.GONE
+                }
+
+                // Highest alert
+                if (!entity.highestAlertName.isNullOrEmpty()) {
+                    tvHighestAlert.text = "⚠ Alerta: ${entity.highestAlertName} (${entity.highestAlertVariable})"
+                    tvHighestAlert.visibility = View.VISIBLE
+                } else {
+                    tvHighestAlert.visibility = View.GONE
+                }
+
+                // Variables
+                llVariables.removeAllViews()
+                entity.variables.forEach { variable ->
+                    val tv = TextView(itemView.context).apply {
+                        text = "  • ${variable.name}: ${variable.value ?: "N/A"}"
+                        textSize = 12f
+                        setTextColor(Color.parseColor("#666666"))
+                    }
+                    llVariables.addView(tv)
+                }
+
+                // Timestamp
+                tvTimeInstant.text = entity.timeInstant ?: ""
+
+
         }
     }
 }

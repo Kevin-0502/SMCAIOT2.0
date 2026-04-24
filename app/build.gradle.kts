@@ -52,4 +52,13 @@ dependencies {
 
     // Coroutines en Activity
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
+
+    // Fragment KTX
+    implementation("androidx.fragment:fragment-ktx:1.6.2")
+
+    // Gráficos de líneas
+    implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
+
+    // Google Maps
+    implementation("com.google.android.gms:play-services-maps:19.0.0")
 }

@@ -1,62 +1,55 @@
 package com.example.smcaiot
 
 import android.os.Bundle
-import android.view.View
-import android.widget.ProgressBar
-import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.lifecycleScope
-import androidx.recyclerview.widget.RecyclerView
-import com.example.smcaiot.network.EntityAdapter
-import com.example.smcaiot.network.RetrofitClient
-import kotlinx.coroutines.launch
+import androidx.fragment.app.Fragment
+import com.google.android.material.bottomnavigation.BottomNavigationView
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var rvEntities: RecyclerView
-    private lateinit var progressBar: ProgressBar
-    private lateinit var tvError: TextView
-    private lateinit var adapter: EntityAdapter
+    private lateinit var bottomNavigation: BottomNavigationView
 
-    // Reemplazá con tu token real
-    private val authToken = "Bearer TU_TOKEN_AQUI"
+    // Fragments
+    private val entitiesFragment = EntitiesFragment()
+    private val mapsFragment = MapsFragment()
+    private val alertsFragment = AlertsFragment()
+    private val profileFragment = ProfileFragment()
+
+    private var activeFragment: Fragment = entitiesFragment
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        rvEntities = findViewById(R.id.rvEntities)
-        progressBar = findViewById(R.id.progressBar)
-        tvError = findViewById(R.id.tvError)
+        bottomNavigation = findViewById(R.id.bottomNavigation)
 
-        adapter = EntityAdapter()
-        rvEntities.adapter = adapter
+        if (savedInstanceState == null) {
+            // Agregar todos los fragments y ocultar los que no son el inicial
+            supportFragmentManager.beginTransaction().apply {
+                add(R.id.fragmentContainer, profileFragment, "profile").hide(profileFragment)
+                add(R.id.fragmentContainer, alertsFragment, "alerts").hide(alertsFragment)
+                add(R.id.fragmentContainer, mapsFragment, "maps").hide(mapsFragment)
+                add(R.id.fragmentContainer, entitiesFragment, "entities")
+            }.commit()
+        }
 
-        loadEntities()
-    }
-
-    private fun loadEntities() {
-        progressBar.visibility = View.VISIBLE
-        tvError.visibility = View.GONE
-
-        lifecycleScope.launch {
-            try {
-                val response = RetrofitClient.apiService.getEntities(
-                    authorization = authToken
-                )
-                if (response.isSuccessful) {
-                    val entities = response.body() ?: emptyList()
-                    adapter.updateData(entities)
-                } else {
-                    tvError.text = "Error: ${response.code()} - ${response.message()}"
-                    tvError.visibility = View.VISIBLE
-                }
-            } catch (e: Exception) {
-                tvError.text = "Error de conexión: ${e.message}"
-                tvError.visibility = View.VISIBLE
-            } finally {
-                progressBar.visibility = View.GONE
+        bottomNavigation.setOnItemSelectedListener { item ->
+            val selectedFragment = when (item.itemId) {
+                R.id.nav_entities -> entitiesFragment
+                R.id.nav_maps -> mapsFragment
+                R.id.nav_alerts -> alertsFragment
+                R.id.nav_profile -> profileFragment
+                else -> entitiesFragment
             }
+
+            if (selectedFragment != activeFragment) {
+                supportFragmentManager.beginTransaction()
+                    .hide(activeFragment)
+                    .show(selectedFragment)
+                    .commit()
+                activeFragment = selectedFragment
+            }
+            true
         }
     }
 }
