@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">SMCAIOT</string>
-    <string name="TipoId">loradevicesensecapws10in1</string>
-
+    <string name="TipoId"></string>
+    <!--LoraDeviceAgua -->
     <!-- Bottom Navigation Tabs -->
     <string name="tab_entities">Entidades</string>
     <string name="tab_maps">Mapas</string>

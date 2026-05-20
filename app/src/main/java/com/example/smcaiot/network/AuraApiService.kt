@@ -20,8 +20,10 @@ interface AuraApiService {
     @GET("v1/ngsi/historical/{entityId}/sensors")
     suspend fun getHistoricalSensors(
         @Path("entityId", encoded = true) entityId: String,
-        @Query("amount") amount: Int = 1,
-        @Query("unit") unit: String = "month",
+        @Query("amount") amount: Int? = 1,
+        @Query("unit") unit: String? = "month",
+        @Query("dateFrom") dateFrom: String? = null,
+        @Query("dateTo") dateTo: String? = null,
         @Header("fiware-service") fiwareService: String = "sv",
         @Header("fiware-servicepath") fiwareServicePath: String = "/SanSalvador/SSE",
         @Header("Authorization") authorization: String

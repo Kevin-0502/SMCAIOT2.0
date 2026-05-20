@@ -6,19 +6,22 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ProgressBar
-import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
+import com.example.smcaiot.models.EntityResponse
 import com.example.smcaiot.network.EntityAdapter
+import com.example.smcaiot.ui.ErrorStateHelper
+import com.example.smcaiot.ui.ErrorType
 import kotlinx.coroutines.launch
 
 class EntitiesFragment : Fragment() {
 
     private lateinit var rvEntities: RecyclerView
     private lateinit var progressBar: ProgressBar
-    private lateinit var tvError: TextView
+    private lateinit var layoutContent: View
+    private lateinit var layoutErrorState: View
     private lateinit var adapter: EntityAdapter
 
     private val viewModel: EntityViewModel by activityViewModels()
@@ -36,24 +39,27 @@ class EntitiesFragment : Fragment() {
 
         rvEntities = view.findViewById(R.id.rvEntities)
         progressBar = view.findViewById(R.id.progressBar)
-        tvError = view.findViewById(R.id.tvError)
+        layoutContent = view.findViewById(R.id.layoutContent)
+        layoutErrorState = view.findViewById(R.id.layoutErrorState)
 
         adapter = EntityAdapter { entity ->
-            val intent = Intent(requireContext(), EntityDetailActivity::class.java).apply {
-                putExtra(EntityDetailActivity.EXTRA_ENTITY_ID, entity.id)
-                putExtra(EntityDetailActivity.EXTRA_ENTITY_TYPE, entity.type)
-                putExtra(EntityDetailActivity.EXTRA_ENTITY_COLOR, entity.color)
-                putExtra(EntityDetailActivity.EXTRA_DEVICE_NAME, entity.deviceName)
-                putExtra(EntityDetailActivity.EXTRA_ENTITY_LEVEL, entity.level)
-            }
-            startActivity(intent)
+            navigateToDetail(entity)
         }
         rvEntities.adapter = adapter
 
         observeViewModel()
-
-        // Cargar entidades (si ya se cargaron, no repite la petición)
         viewModel.loadEntities()
+    }
+
+    private fun navigateToDetail(entity: EntityResponse) {
+        val intent = Intent(requireContext(), EntityDetailActivity::class.java).apply {
+            putExtra(EntityDetailActivity.EXTRA_ENTITY_ID, entity.id)
+            putExtra(EntityDetailActivity.EXTRA_ENTITY_TYPE, entity.type)
+            putExtra(EntityDetailActivity.EXTRA_ENTITY_COLOR, entity.color)
+            putExtra(EntityDetailActivity.EXTRA_DEVICE_NAME, entity.deviceName)
+            putExtra(EntityDetailActivity.EXTRA_ENTITY_LEVEL, entity.level)
+        }
+        startActivity(intent)
     }
 
     private fun observeViewModel() {
@@ -62,16 +68,31 @@ class EntitiesFragment : Fragment() {
                 when (state) {
                     is EntityUiState.Loading -> {
                         progressBar.visibility = View.VISIBLE
-                        tvError.visibility = View.GONE
+                        layoutContent.visibility = View.VISIBLE
+                        ErrorStateHelper.hide(layoutErrorState)
                     }
                     is EntityUiState.Success -> {
                         progressBar.visibility = View.GONE
-                        tvError.visibility = View.GONE
+                        layoutContent.visibility = View.VISIBLE
+                        ErrorStateHelper.hide(layoutErrorState)
                     }
-                    is EntityUiState.Error -> {
+                    is EntityUiState.NoConnection -> {
                         progressBar.visibility = View.GONE
-                        tvError.text = state.message
-                        tvError.visibility = View.VISIBLE
+                        layoutContent.visibility = View.GONE
+                        ErrorStateHelper.show(layoutErrorState, ErrorType.NO_CONNECTION) {
+                            viewModel.refresh()
+                        }
+                    }
+                    is EntityUiState.ApiError -> {
+                        progressBar.visibility = View.GONE
+                        layoutContent.visibility = View.GONE
+                        ErrorStateHelper.show(
+                            layoutErrorState,
+                            ErrorType.API_ERROR,
+                            errorCode = state.code
+                        ) {
+                            viewModel.refresh()
+                        }
                     }
                 }
             }

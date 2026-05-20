@@ -84,15 +84,31 @@ class EntityAdapter(
                     tvHighestAlert.visibility = View.GONE
                 }
 
-                // Variables
-                llVariables.removeAllViews()
-                entity.variables.forEach { variable ->
-                    val tv = TextView(itemView.context).apply {
-                        text = "  • ${variable.name}: ${variable.value ?: "N/A"}"
-                        textSize = 12f
-                        setTextColor(Color.parseColor("#666666"))
+                // Variables: reutilizar TextViews existentes para evitar presión en el GC
+                val variableCount = entity.variables.size
+                val existingCount = llVariables.childCount
+
+                // Reutilizar vistas existentes
+                entity.variables.forEachIndexed { index, variable ->
+                    val tv: TextView
+                    if (index < existingCount) {
+                        // Reutilizar vista existente
+                        tv = llVariables.getChildAt(index) as TextView
+                        tv.visibility = View.VISIBLE
+                    } else {
+                        // Crear nueva vista solo si no hay suficientes
+                        tv = TextView(itemView.context).apply {
+                            textSize = 12f
+                            setTextColor(Color.parseColor("#666666"))
+                        }
+                        llVariables.addView(tv)
                     }
-                    llVariables.addView(tv)
+                    tv.text = "  • ${variable.name}: ${variable.value ?: "N/A"}"
+                }
+
+                // Ocultar vistas sobrantes en vez de eliminarlas
+                for (i in variableCount until llVariables.childCount) {
+                    llVariables.getChildAt(i).visibility = View.GONE
                 }
 
                 // Timestamp
