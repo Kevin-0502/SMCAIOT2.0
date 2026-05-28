@@ -2,6 +2,7 @@ package com.example.smcaiot
 
 import android.graphics.Color
 import android.os.Bundle
+import android.util.Log
 import android.view.MenuItem
 import android.view.View
 import android.widget.ProgressBar
@@ -15,6 +16,7 @@ import com.example.smcaiot.models.SensorChartItem
 import com.example.smcaiot.network.RetrofitClient
 import com.example.smcaiot.network.SensorChartAdapter
 import com.example.smcaiot.network.SensorTableAdapter
+import com.example.smcaiot.network.SessionManager
 import com.example.smcaiot.ui.ErrorStateHelper
 import com.example.smcaiot.ui.ErrorType
 import com.google.android.material.chip.Chip
@@ -52,7 +54,8 @@ class EntityDetailActivity : AppCompatActivity() {
     private lateinit var tableAdapter: SensorTableAdapter
 
     private var entityId: String = ""
-    private val authToken = "Cambiar token de inicio de sesion"
+    private val authToken: String
+        get() = SessionManager.getToken() ?: ""
 
     // Periodo predefinido (siempre tiene valores válidos)
     private var currentAmount: Int = 1
@@ -261,16 +264,20 @@ class EntityDetailActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             try {
+                Log.d("EntityDetail", "isCustomRange=$isCustomRange, dateFrom=$customDateFrom, dateTo=$customDateTo, amount=$currentAmount, unit=$currentUnit")
+
                 val response = if (isCustomRange && customDateFrom != null && customDateTo != null) {
+                    Log.d("EntityDetail", ">> Llamando API con rango personalizado: dateFrom=$customDateFrom, dateTo=$customDateTo")
                     RetrofitClient.apiService.getHistoricalSensors(
                         entityId = entityId,
-                        amount = null,
-                        unit = null,
+                        amount = 12,
+                        unit = "month",
                         dateFrom = customDateFrom,
                         dateTo = customDateTo,
                         authorization = authToken
                     )
                 } else {
+                    Log.d("EntityDetail", ">> Llamando API con periodo: amount=$currentAmount, unit=$currentUnit")
                     RetrofitClient.apiService.getHistoricalSensors(
                         entityId = entityId,
                         amount = currentAmount,
@@ -280,6 +287,8 @@ class EntityDetailActivity : AppCompatActivity() {
                 }
 
                 progressBar.visibility = View.GONE
+
+                Log.d("EntityDetail", "Response code=${response.code()}, body values count=${response.body()?.values?.size ?: "null"}")
 
                 if (response.isSuccessful) {
                     val body = response.body()

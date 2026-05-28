@@ -6,6 +6,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.smcaiot.models.EntityResponse
 import com.example.smcaiot.network.RetrofitClient
+import com.example.smcaiot.network.SessionManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -20,7 +21,8 @@ class EntityViewModel(application: Application) : AndroidViewModel(application) 
         private const val TAG = "EntityViewModel"
     }
 
-    private val authToken = "Cambiar token de inicio de sesion"
+    private val authToken: String
+        get() = SessionManager.getToken() ?: ""
     private val filterType: String = application.getString(R.string.TipoId)
 
     // Estado de la UI

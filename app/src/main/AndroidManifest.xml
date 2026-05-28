@@ -16,19 +16,22 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.SMCAIOT">
 
-        <!-- Google Maps API Key - Reemplazar con tu API key real -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyDnPbjA2pjSpNfB8SfAkiYZt3Yf9FFK244" />
         <activity
-            android:name=".MainActivity"
-            android:exported="true">
+            android:name=".LoginActivity"
+            android:exported="true"
+            android:theme="@style/Theme.SMCAIOT">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="false" />
 
         <activity
             android:name=".EntityDetailActivity"

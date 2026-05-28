@@ -2,13 +2,22 @@ package com.example.smcaiot.network
 
 import com.example.smcaiot.models.EntityResponse
 import com.example.smcaiot.models.HistoricalResponse
+import com.example.smcaiot.models.LoginRequest
+import com.example.smcaiot.models.LoginResponse
 import retrofit2.Response
+import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Header
+import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface AuraApiService {
+
+    @POST("oauth2/login")
+    suspend fun login(
+        @Body request: LoginRequest
+    ): Response<LoginResponse>
 
     @GET("v1/ngsi/entities")
     suspend fun getEntities(
