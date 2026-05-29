@@ -11,7 +11,7 @@ object RetrofitClient {
     private const val BASE_URL = "https://api.aura.sima.udb.edu.sv/"
 
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
-        level = HttpLoggingInterceptor.Level.BODY
+        level = HttpLoggingInterceptor.Level.HEADERS
     }
 
     private val okHttpClient = OkHttpClient.Builder()

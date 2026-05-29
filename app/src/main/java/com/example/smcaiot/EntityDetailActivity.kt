@@ -222,6 +222,9 @@ class EntityDetailActivity : AppCompatActivity() {
     }
 
     private fun showDateRangePicker() {
+        // Evitar mostrar el picker si ya hay uno abierto
+        if (supportFragmentManager.findFragmentByTag("date_range_picker") != null) return
+
         val picker = MaterialDatePicker.Builder.dateRangePicker()
             .setTitleText("Seleccionar rango de fechas")
             .build()
@@ -237,13 +240,10 @@ class EntityDetailActivity : AppCompatActivity() {
                 val displayFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
 
                 customDateFrom = isoFormat.format(Date(startMillis))
-                // Fin del día para incluir todo el último día seleccionado
                 customDateTo = isoFormat.format(Date(endMillis + 86_399_999L))
 
-                // Activar modo rango personalizado
                 isCustomRange = true
 
-                // Actualizar texto del chip con las fechas seleccionadas
                 val fromDisplay = displayFormat.format(Date(startMillis))
                 val toDisplay = displayFormat.format(Date(endMillis))
                 customChip?.text = "$fromDisplay - $toDisplay"
@@ -252,7 +252,11 @@ class EntityDetailActivity : AppCompatActivity() {
             }
         }
 
-        picker.show(supportFragmentManager, "date_range_picker")
+        try {
+            picker.show(supportFragmentManager, "date_range_picker")
+        } catch (e: Exception) {
+            Log.e("EntityDetail", "Error al mostrar DateRangePicker", e)
+        }
     }
 
     // ── Carga de datos ──────────────────────────────────────────────
