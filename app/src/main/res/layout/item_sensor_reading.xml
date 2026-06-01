@@ -4,24 +4,33 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginHorizontal="12dp"
-    android:layout_marginVertical="4dp"
-    app:cardCornerRadius="10dp"
-    app:cardElevation="2dp">
+    android:layout_marginHorizontal="16dp"
+    android:layout_marginVertical="6dp"
+    app:cardBackgroundColor="@color/white"
+    app:cardCornerRadius="14dp"
+    app:cardElevation="2dp"
+    app:strokeWidth="0dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:padding="12dp"
+        android:padding="16dp"
         android:gravity="center_vertical">
 
-        <View
-            android:id="@+id/viewColorIndicator"
-            android:layout_width="6dp"
-            android:layout_height="40dp"
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="4dp"
+            android:layout_height="32dp"
             android:layout_marginEnd="12dp"
-            android:background="#CCCCCC" />
+            app:cardCornerRadius="2dp"
+            app:cardElevation="0dp"
+            app:strokeWidth="0dp"
+            app:cardBackgroundColor="#CCCCCC">
+            <View
+                android:id="@+id/viewColorIndicator"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+        </com.google.android.material.card.MaterialCardView>
 
         <LinearLayout
             android:layout_width="0dp"
@@ -33,9 +42,10 @@
                 android:id="@+id/tvSensorName"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textSize="14sp"
+                android:textSize="15sp"
                 android:textStyle="bold"
-                android:textColor="#212121" />
+                android:textColor="#333333"
+                android:fontFamily="sans-serif-medium" />
 
             <TextView
                 android:id="@+id/tvDisplayName"
@@ -54,8 +64,9 @@
             android:layout_height="wrap_content"
             android:textSize="16sp"
             android:textStyle="bold"
-            android:textColor="#1565C0"
-            android:layout_marginStart="8dp" />
+            android:textColor="@color/principal"
+            android:layout_marginStart="8dp"
+            android:fontFamily="sans-serif-medium" />
 
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

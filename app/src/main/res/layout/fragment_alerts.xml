@@ -5,25 +5,26 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#F5F5F5">
+    android:background="@color/blanco_azulado">
 
-    <!-- Header azul -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="#1A3C7B"
+        android:background="@color/principal"
         android:orientation="vertical"
         android:gravity="center"
-        android:paddingTop="32dp"
+        android:paddingTop="26dp"
         android:paddingBottom="24dp">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Alertas"
-            android:textSize="26sp"
-            android:textColor="#FFFFFF"
-            android:fontFamily="sans-serif-light" />
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:textColor="@color/white"
+            android:fontFamily="sans-serif-medium"
+            android:letterSpacing="0.02" />
     </LinearLayout>
 
     <FrameLayout
@@ -31,7 +32,6 @@
         android:layout_height="0dp"
         android:layout_weight="1">
 
-        <!-- Contenido normal -->
         <LinearLayout
             android:id="@+id/layoutContent"
             android:layout_width="match_parent"
@@ -46,7 +46,6 @@
                 android:layout_marginTop="24dp"
                 android:visibility="gone" />
 
-            <!-- Estado vacío de alertas -->
             <TextView
                 android:id="@+id/tvEmptyAlerts"
                 android:layout_width="match_parent"
@@ -54,6 +53,7 @@
                 android:text="No hay alertas activas"
                 android:textSize="15sp"
                 android:textColor="#888888"
+                android:fontFamily="sans-serif"
                 android:textAlignment="center"
                 android:padding="32dp"
                 android:visibility="gone" />
@@ -62,13 +62,12 @@
                 android:id="@+id/rvAlerts"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:paddingTop="8dp"
-                android:paddingBottom="8dp"
+                android:paddingTop="12dp"
+                android:paddingBottom="16dp"
                 android:clipToPadding="false"
                 app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
         </LinearLayout>
 
-        <!-- Error state -->
         <include layout="@layout/layout_error_state" />
 
     </FrameLayout>

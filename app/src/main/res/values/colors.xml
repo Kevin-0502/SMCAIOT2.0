@@ -3,4 +3,6 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <color name="ic_launcher_background">#FFFFFFFF</color>
+    <color name="principal">#274292</color>
+    <color name="blanco_azulado">#EBEFF9</color>
 </resources>

@@ -4,9 +4,12 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="8dp"
-    app:cardCornerRadius="12dp"
-    app:cardElevation="4dp">
+    android:layout_marginHorizontal="16dp"
+    android:layout_marginVertical="8dp"
+    app:cardBackgroundColor="@color/white"
+    app:cardCornerRadius="14dp"
+    app:cardElevation="3dp"
+    app:strokeWidth="0dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -14,27 +17,35 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- Encabezado: nombre + indicador de color/nivel -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical">
 
-            <View
-                android:id="@+id/viewColorIndicator"
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="12dp"
                 android:layout_height="12dp"
-                android:background="@android:color/holo_green_dark" />
+                app:cardCornerRadius="6dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="0dp"
+                app:cardBackgroundColor="@android:color/holo_green_dark">
+                <View
+                    android:id="@+id/viewColorIndicator"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent" />
+            </com.google.android.material.card.MaterialCardView>
 
             <TextView
                 android:id="@+id/tvEntityId"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:layout_marginStart="8dp"
+                android:layout_marginStart="10dp"
                 android:textSize="16sp"
                 android:textStyle="bold"
+                android:textColor="#274292"
+                android:fontFamily="sans-serif-medium"
                 android:ellipsize="end"
                 android:maxLines="1" />
 
@@ -43,63 +54,75 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textSize="12sp"
-                android:textColor="#757575" />
+                android:textStyle="bold"
+                android:textColor="#757575"
+                android:fontFamily="sans-serif-medium" />
         </LinearLayout>
 
-        <!-- Tipo y dispositivo -->
         <TextView
             android:id="@+id/tvType"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
+            android:layout_marginTop="6dp"
+            android:layout_marginStart="22dp"
             android:textSize="13sp"
-            android:textColor="#555555" />
+            android:textColor="#666666"
+            android:fontFamily="sans-serif" />
 
         <TextView
             android:id="@+id/tvDeviceName"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="2dp"
+            android:layout_marginStart="22dp"
             android:textSize="13sp"
-            android:textColor="#555555"
+            android:textColor="#666666"
             android:visibility="gone" />
 
-        <!-- Dirección -->
         <TextView
             android:id="@+id/tvAddress"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="2dp"
+            android:layout_marginStart="22dp"
             android:textSize="12sp"
             android:textColor="#888888"
             android:visibility="gone" />
 
-        <!-- Alerta más alta -->
         <TextView
             android:id="@+id/tvHighestAlert"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
+            android:layout_marginStart="22dp"
             android:textSize="12sp"
             android:textStyle="italic"
+            android:textColor="#D32F2F"
             android:visibility="gone" />
 
-        <!-- Variables (contenedor dinámico) -->
         <LinearLayout
             android:id="@+id/llVariables"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:layout_marginTop="8dp" />
+            android:visibility="gone" />
 
-        <!-- Timestamp -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#E0E0E0"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="8dp"
+            android:layout_marginStart="22dp" />
+
         <TextView
             android:id="@+id/tvTimeInstant"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
+            android:layout_gravity="end"
             android:textSize="11sp"
-            android:textColor="#AAAAAA" />
+            android:textColor="#AAAAAA"
+            android:fontFamily="sans-serif" />
 
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

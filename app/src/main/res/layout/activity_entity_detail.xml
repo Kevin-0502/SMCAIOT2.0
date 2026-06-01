@@ -6,23 +6,27 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:fitsSystemWindows="true"
-    android:background="#F5F5F5">
+    android:background="@color/blanco_azulado">
 
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        android:background="@android:color/background_light"
-        app:titleTextColor="@android:color/primary_text_light"
-        app:navigationIconTint="@android:color/primary_text_light" />
+        android:background="@color/principal"
+        app:titleTextColor="@color/white"
+        app:navigationIconTint="@android:color/white"
+        android:theme="@style/ThemeOverlay.MaterialComponents.Dark.ActionBar"
+        style="@style/Widget.Material3.Toolbar" />
 
-    <!-- Header card: entity info -->
     <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="12dp"
-        app:cardCornerRadius="12dp"
-        app:cardElevation="4dp">
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginVertical="12dp"
+        app:cardBackgroundColor="@color/white"
+        app:cardCornerRadius="14dp"
+        app:cardElevation="3dp"
+        app:strokeWidth="0dp">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -36,20 +40,29 @@
                 android:orientation="horizontal"
                 android:gravity="center_vertical">
 
-                <View
-                    android:id="@+id/viewColorIndicator"
-                    android:layout_width="14dp"
-                    android:layout_height="14dp"
-                    android:background="@android:color/holo_green_dark" />
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="12dp"
+                    android:layout_height="12dp"
+                    app:cardCornerRadius="6dp"
+                    app:cardElevation="0dp"
+                    app:strokeWidth="0dp"
+                    app:cardBackgroundColor="@android:color/holo_green_dark">
+                    <View
+                        android:id="@+id/viewColorIndicator"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent" />
+                </com.google.android.material.card.MaterialCardView>
 
                 <TextView
                     android:id="@+id/tvEntityId"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:layout_marginStart="8dp"
-                    android:textSize="13sp"
-                    android:textColor="#555555"
+                    android:layout_marginStart="10dp"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="#274292"
+                    android:fontFamily="sans-serif-medium"
                     android:ellipsize="end"
                     android:maxLines="1" />
             </LinearLayout>
@@ -58,59 +71,70 @@
                 android:id="@+id/tvEntityType"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
+                android:layout_marginTop="6dp"
+                android:layout_marginStart="22dp"
                 android:textSize="13sp"
-                android:textColor="#666666" />
+                android:textColor="#666666"
+                android:fontFamily="sans-serif" />
 
             <TextView
                 android:id="@+id/tvDeviceName"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
+                android:layout_marginStart="22dp"
                 android:textSize="13sp"
                 android:textColor="#666666"
                 android:visibility="gone" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#E0E0E0"
+                android:layout_marginTop="12dp"
+                android:layout_marginBottom="6dp"
+                android:layout_marginStart="22dp" />
 
             <TextView
                 android:id="@+id/tvLastTimestamp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
+                android:layout_gravity="end"
                 android:textSize="11sp"
-                android:textColor="#AAAAAA" />
+                android:textColor="#AAAAAA"
+                android:fontFamily="sans-serif" />
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
-    <!-- Section header -->
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
-        android:layout_marginBottom="4dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="8dp"
         android:text="Historial de sensores"
-        android:textSize="14sp"
+        android:textSize="15sp"
         android:textStyle="bold"
-        android:textColor="#424242" />
+        android:textColor="#274292"
+        android:fontFamily="sans-serif-medium" />
 
-    <!-- Modo de vista: Gráficas / Tabla -->
     <com.google.android.material.chip.ChipGroup
         android:id="@+id/chipGroupViewMode"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingStart="12dp"
-        android:paddingEnd="12dp"
-        android:layout_marginBottom="2dp"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:layout_marginBottom="6dp"
         app:singleSelection="true"
         app:selectionRequired="true" />
 
-    <!-- Filtro de periodo -->
     <com.google.android.material.chip.ChipGroup
         android:id="@+id/chipGroupPeriod"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingStart="12dp"
-        android:paddingEnd="12dp"
-        android:layout_marginBottom="4dp"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:layout_marginBottom="8dp"
         app:singleSelection="true"
         app:selectionRequired="true" />
 
@@ -143,7 +167,6 @@
                 app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
         </LinearLayout>
 
-        <!-- Error state -->
         <include layout="@layout/layout_error_state" />
 
     </FrameLayout>

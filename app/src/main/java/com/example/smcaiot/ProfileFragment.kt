@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import com.example.smcaiot.network.SessionManager
 import com.google.android.material.button.MaterialButton
@@ -48,18 +49,27 @@ class ProfileFragment : Fragment() {
 
         // Cerrar sesión
         btnLogout.setOnClickListener {
-            MaterialAlertDialogBuilder(requireContext())
-                .setTitle("Cerrar sesión")
-                .setMessage("Se cerrará tu sesión actual y tendrás que iniciar sesión de nuevo.")
-                .setNegativeButton("Cancelar", null)
-                .setPositiveButton("Cerrar sesión") { _, _ ->
-                    SessionManager.logout()
-                    val intent = Intent(requireContext(), LoginActivity::class.java).apply {
-                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                    }
-                    startActivity(intent)
+            val dialogView = layoutInflater.inflate(R.layout.dialog_logout, null)
+            val dialog = AlertDialog.Builder(requireContext())
+                .setView(dialogView)
+                .create()
+
+            dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+            dialogView.findViewById<MaterialButton>(R.id.btnCancel).setOnClickListener {
+                dialog.dismiss()
+            }
+
+            dialogView.findViewById<MaterialButton>(R.id.btnConfirm).setOnClickListener {
+                dialog.dismiss()
+                SessionManager.logout()
+                val intent = Intent(requireContext(), LoginActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                 }
-                .show()
+                startActivity(intent)
+            }
+
+            dialog.show()
         }
     }
 }

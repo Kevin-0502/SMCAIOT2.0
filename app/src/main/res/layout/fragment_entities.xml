@@ -5,34 +5,33 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#F5F5F5">
+    android:background="@color/blanco_azulado">
 
-    <!-- Header azul -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="#1A3C7B"
+        android:background="@color/principal"
         android:orientation="vertical"
         android:gravity="center"
-        android:paddingTop="32dp"
+        android:paddingTop="26dp"
         android:paddingBottom="24dp">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Puntos de Control"
-            android:textSize="26sp"
-            android:textColor="#FFFFFF"
-            android:fontFamily="sans-serif-light" />
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:textColor="@color/white"
+            android:fontFamily="sans-serif-medium"
+            android:letterSpacing="0.02" />
     </LinearLayout>
 
-    <!-- Contenido principal + error state apilados -->
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1">
 
-        <!-- Contenido normal -->
         <LinearLayout
             android:id="@+id/layoutContent"
             android:layout_width="match_parent"
@@ -51,13 +50,12 @@
                 android:id="@+id/rvEntities"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:paddingTop="8dp"
-                android:paddingBottom="8dp"
+                android:paddingTop="12dp"
+                android:paddingBottom="12dp"
                 android:clipToPadding="false"
                 app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
         </LinearLayout>
 
-        <!-- Error state (oculto por defecto) -->
         <include layout="@layout/layout_error_state" />
 
     </FrameLayout>
