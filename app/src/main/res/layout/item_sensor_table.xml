@@ -66,6 +66,15 @@
             android:textColor="#757575"
             android:visibility="gone" />
 
+        <TextView
+            android:id="@+id/tvDataCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="20dp"
+            android:layout_marginTop="2dp"
+            android:textSize="11sp"
+            android:textColor="#9E9E9E" />
+
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/llSummaryContainer"
             android:layout_width="match_parent"

@@ -301,6 +301,7 @@ class EntityDetailActivity : AppCompatActivity() {
                         ErrorStateHelper.hide(layoutErrorState)
                         tvLastTimestamp.text = "Última lectura: ${body.values.first().timestamp ?: ""}"
                         lastChartItems = buildChartItems(body)
+                        chartAdapter.updatePeriod(currentUnit, currentAmount)
                         if (currentViewMode == VIEW_MODE_CHART) {
                             chartAdapter.updateData(lastChartItems)
                         } else {

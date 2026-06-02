@@ -6,7 +6,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ProgressBar
-import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
@@ -15,13 +14,13 @@ import com.example.smcaiot.models.EntityResponse
 import com.example.smcaiot.network.AlertEntityAdapter
 import com.example.smcaiot.ui.ErrorStateHelper
 import com.example.smcaiot.ui.ErrorType
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 class AlertsFragment : Fragment() {
 
     private lateinit var rvAlerts: RecyclerView
     private lateinit var progressBar: ProgressBar
-    private lateinit var tvEmpty: TextView
     private lateinit var layoutContent: View
     private lateinit var layoutErrorState: View
     private lateinit var adapter: AlertEntityAdapter
@@ -41,7 +40,6 @@ class AlertsFragment : Fragment() {
 
         rvAlerts = view.findViewById(R.id.rvAlerts)
         progressBar = view.findViewById(R.id.progressBarAlerts)
-        tvEmpty = view.findViewById(R.id.tvEmptyAlerts)
         layoutContent = view.findViewById(R.id.layoutContent)
         layoutErrorState = view.findViewById(R.id.layoutErrorState)
 
@@ -67,57 +65,53 @@ class AlertsFragment : Fragment() {
 
     private fun observeViewModel() {
         viewLifecycleOwner.lifecycleScope.launch {
-            viewModel.uiState.collect { state ->
-                when (state) {
-                    is EntityUiState.Loading -> {
-                        progressBar.visibility = View.VISIBLE
-                        layoutContent.visibility = View.VISIBLE
-                        ErrorStateHelper.hide(layoutErrorState)
+            viewModel.uiState
+                .combine(viewModel.entities) { state, entities -> state to entities }
+                .collect { (state, entities) ->
+                    val entitiesWithAlerts = entities.filter { entity ->
+                        !entity.highestAlertName.isNullOrEmpty() ||
+                        entity.variables.any { it.alert != null }
                     }
-                    is EntityUiState.Success -> {
-                        progressBar.visibility = View.GONE
-                        layoutContent.visibility = View.VISIBLE
-                        ErrorStateHelper.hide(layoutErrorState)
-                    }
-                    is EntityUiState.NoConnection -> {
-                        progressBar.visibility = View.GONE
-                        layoutContent.visibility = View.GONE
-                        ErrorStateHelper.show(layoutErrorState, ErrorType.NO_CONNECTION) {
-                            viewModel.refresh()
+                    adapter.updateData(entitiesWithAlerts)
+
+                    when (state) {
+                        is EntityUiState.Loading -> {
+                            progressBar.visibility = View.VISIBLE
+                            layoutContent.visibility = View.VISIBLE
+                            ErrorStateHelper.hide(layoutErrorState)
+                        }
+                        is EntityUiState.Success -> {
+                            progressBar.visibility = View.GONE
+                            if (entitiesWithAlerts.isEmpty()) {
+                                layoutContent.visibility = View.GONE
+                                ErrorStateHelper.show(layoutErrorState, ErrorType.NO_ALERTS) {
+                                    viewModel.refresh()
+                                }
+                            } else {
+                                layoutContent.visibility = View.VISIBLE
+                                ErrorStateHelper.hide(layoutErrorState)
+                            }
+                        }
+                        is EntityUiState.NoConnection -> {
+                            progressBar.visibility = View.GONE
+                            layoutContent.visibility = View.GONE
+                            ErrorStateHelper.show(layoutErrorState, ErrorType.NO_CONNECTION) {
+                                viewModel.refresh()
+                            }
+                        }
+                        is EntityUiState.ApiError -> {
+                            progressBar.visibility = View.GONE
+                            layoutContent.visibility = View.GONE
+                            ErrorStateHelper.show(
+                                layoutErrorState,
+                                ErrorType.API_ERROR,
+                                errorCode = state.code
+                            ) {
+                                viewModel.refresh()
+                            }
                         }
                     }
-                    is EntityUiState.ApiError -> {
-                        progressBar.visibility = View.GONE
-                        layoutContent.visibility = View.GONE
-                        ErrorStateHelper.show(
-                            layoutErrorState,
-                            ErrorType.API_ERROR,
-                            errorCode = state.code
-                        ) {
-                            viewModel.refresh()
-                        }
-                    }
                 }
-            }
-        }
-
-        viewLifecycleOwner.lifecycleScope.launch {
-            viewModel.entities.collect { entities ->
-                val entitiesWithAlerts = entities.filter { entity ->
-                    !entity.highestAlertName.isNullOrEmpty() ||
-                    entity.variables.any { it.alert != null }
-                }
-
-                adapter.updateData(entitiesWithAlerts)
-
-                if (entitiesWithAlerts.isEmpty() && viewModel.uiState.value is EntityUiState.Success) {
-                    tvEmpty.visibility = View.VISIBLE
-                    rvAlerts.visibility = View.GONE
-                } else {
-                    tvEmpty.visibility = View.GONE
-                    rvAlerts.visibility = View.VISIBLE
-                }
-            }
         }
     }
 }

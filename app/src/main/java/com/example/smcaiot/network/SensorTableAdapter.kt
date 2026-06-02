@@ -64,6 +64,7 @@ class SensorTableAdapter(
         private val tvSensorName: TextView = itemView.findViewById(R.id.tvSensorName)
         private val tvDisplayName: TextView = itemView.findViewById(R.id.tvDisplayName)
         private val tvCurrentValue: TextView = itemView.findViewById(R.id.tvCurrentValue)
+        private val tvDataCount: TextView = itemView.findViewById(R.id.tvDataCount)
         private val tvMinValue: TextView = itemView.findViewById(R.id.tvMinValue)
         private val tvAvgValue: TextView = itemView.findViewById(R.id.tvAvgValue)
         private val tvMaxValue: TextView = itemView.findViewById(R.id.tvMaxValue)
@@ -94,6 +95,10 @@ class SensorTableAdapter(
             } catch (e: Exception) {
                 viewSensorColor.setBackgroundColor(Color.LTGRAY)
             }
+
+            // ── Cantidad de registros ──
+            val count = item.entries.size
+            tvDataCount.text = "$count ${if (count == 1) "registro" else "registros"}"
 
             // ── Resumen estadístico ──
             if (item.entries.isNotEmpty()) {

@@ -12,7 +12,8 @@ import com.example.smcaiot.R
 enum class ErrorType {
     NO_CONNECTION,
     API_ERROR,
-    NO_DATA
+    NO_DATA,
+    NO_ALERTS
 }
 
 /**
@@ -67,6 +68,14 @@ object ErrorStateHelper {
                 tvTitle.text = "No hay mediciones\npara este rango"
                 tvDescription.text = "Intenta seleccionar un rango de fechas diferente"
                 btnAction.text = "Cambiar fechas"
+            }
+
+            ErrorType.NO_ALERTS -> {
+                viewCircle.setBackgroundResource(R.drawable.bg_circle_gray)
+                ivIcon.setImageResource(R.drawable.ic_no_alerts)
+                tvTitle.text = "Sin alertas activas"
+                tvDescription.text = "No se encontraron alertas en los\npuntos de control monitoreados"
+                btnAction.text = "Actualizar"
             }
         }
 
