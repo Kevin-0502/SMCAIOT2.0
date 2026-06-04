@@ -21,11 +21,11 @@ import java.util.TimeZone
 class SensorChartAdapter(
     private var items: List<SensorChartItem> = emptyList(),
     private var periodUnit: String = "month",
-    private var periodAmount: Int = 1
+    private var periodAmount: Int = 1,
+    private var isCustomRange: Boolean = false
 ) : RecyclerView.Adapter<SensorChartAdapter.ChartViewHolder>() {
 
     companion object {
-        /** Formatos ISO que puede devolver la API */
         private val isoFormats = arrayOf(
             SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).apply {
                 timeZone = TimeZone.getTimeZone("UTC")
@@ -50,9 +50,10 @@ class SensorChartAdapter(
         notifyDataSetChanged()
     }
 
-    fun updatePeriod(unit: String, amount: Int) {
+    fun updatePeriod(unit: String, amount: Int, customRange: Boolean = false) {
         periodUnit = unit
         periodAmount = amount
+        isCustomRange = customRange
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ChartViewHolder {
@@ -62,7 +63,7 @@ class SensorChartAdapter(
     }
 
     override fun onBindViewHolder(holder: ChartViewHolder, position: Int) {
-        holder.bind(items[position], periodUnit, periodAmount)
+        holder.bind(items[position], periodUnit, periodAmount, isCustomRange)
     }
 
     override fun getItemCount(): Int = items.size
@@ -74,7 +75,7 @@ class SensorChartAdapter(
         private val tvCurrentValue: TextView = itemView.findViewById(R.id.tvCurrentValue)
         private val lineChart: LineChart = itemView.findViewById(R.id.lineChart)
 
-        fun bind(item: SensorChartItem, periodUnit: String, periodAmount: Int) {
+        fun bind(item: SensorChartItem, periodUnit: String, periodAmount: Int, isCustomRange: Boolean) {
             tvSensorName.text = item.name
             tvCurrentValue.text = buildString {
                 val v = item.latestValue
@@ -101,12 +102,11 @@ class SensorChartAdapter(
                 viewSensorColor.setBackgroundColor(Color.LTGRAY)
             }
 
-            setupChart(item, lineColor, periodUnit, periodAmount)
+            setupChart(item, lineColor, periodUnit, periodAmount, isCustomRange)
         }
 
-        private fun setupChart(item: SensorChartItem, lineColor: Int, periodUnit: String, periodAmount: Int) {
-            // Construir las entradas usando el timestamp real como valor X (millis)
-            val timestamps = mutableListOf<String>() // guardar timestamps originales para el formatter
+        private fun setupChart(item: SensorChartItem, lineColor: Int, periodUnit: String, periodAmount: Int, isCustomRange: Boolean) {
+            val timestamps = mutableListOf<String>()
             val chartEntries = mutableListOf<Entry>()
 
             item.entries.forEachIndexed { index, (timestamp, value) ->
@@ -127,21 +127,27 @@ class SensorChartAdapter(
                 setDrawFilled(true)
             }
 
-            // Determinar formato de fecha según el periodo
-            val displayFormat = getDisplayFormat(periodUnit, periodAmount)
+            val displayFormat = if (isCustomRange) {
+                SimpleDateFormat("dd/MM/yy", Locale("es")).apply {
+                    timeZone = TimeZone.getTimeZone("UTC")
+                }
+            } else {
+                getDisplayFormat(periodUnit, periodAmount)
+            }
+
             val formatter = object : ValueFormatter() {
                 override fun getFormattedValue(value: Float): String {
+                    // CORRECCIÓN: Validamos que solo acepte números enteros exactos (sin decimales intermedios defectuosos)
                     val index = value.toInt()
-                    if (index < 0 || index >= timestamps.size) return ""
+                    if (value % 1f != 0f || index < 0 || index >= timestamps.size) return ""
                     val raw = timestamps[index]
                     return formatForAxis(raw, displayFormat)
                 }
             }
 
-            // Calcular cuántas etiquetas mostrar (máx ~5-6 para que no se empalmen)
-            val labelCount = when {
-                timestamps.size <= 6 -> timestamps.size
-                timestamps.size <= 12 -> 6
+            // Calculamos un número prudente de etiquetas según la densidad
+            val maxLabels = when {
+                timestamps.size <= 5 -> timestamps.size
                 else -> 5
             }
 
@@ -161,8 +167,18 @@ class SensorChartAdapter(
                     setDrawGridLines(false)
                     setDrawLabels(true)
                     valueFormatter = formatter
+
+                    // CORRECCIÓN COMPLEMENTARIA: Forzamos la granularidad a un entero y activamos su restricción
                     granularity = 1f
-                    setLabelCount(labelCount, true)
+                    isGranularityEnabled = true
+
+                    // Configuramos rango estricto del eje X basado en los índices reales que existen
+                    axisMinimum = 0f
+                    axisMaximum = if (timestamps.size > 1) (timestamps.size - 1).toFloat() else 0f
+
+                    // Ponemos el conteo en false para evitar divisiones arbitrarias
+                    setLabelCount(maxLabels, false)
+
                     textColor = Color.parseColor("#757575")
                     textSize = 9f
                     labelRotationAngle = -30f
@@ -176,23 +192,12 @@ class SensorChartAdapter(
                 }
 
                 axisRight.isEnabled = false
-
-                // Dar espacio extra abajo para las etiquetas rotadas
-                setExtraOffsets(4f, 4f, 4f, 12f)
-
+                setExtraOffsets(4f, 4f, 4f, 16f)
                 animateX(600)
                 invalidate()
             }
         }
 
-        /**
-         * Elige el patrón de formato según el filtro de periodo:
-         * - 24h        → "HH:mm"         (solo hora)
-         * - 1 semana   → "EEE dd"        (día de semana + número)
-         * - 1 mes      → "dd MMM"        (día + mes abreviado)
-         * - 3+ meses   → "dd/MM/yy"      (fecha corta)
-         * - custom     → "dd/MM/yy"
-         */
         private fun getDisplayFormat(unit: String, amount: Int): SimpleDateFormat {
             val pattern = when (unit) {
                 "hour" -> "HH:mm"
@@ -200,7 +205,9 @@ class SensorChartAdapter(
                 "month" -> if (amount <= 1) "dd MMM" else "dd/MM/yy"
                 else -> "dd/MM/yy"
             }
-            return SimpleDateFormat(pattern, Locale("es"))
+            return SimpleDateFormat(pattern, Locale("es")).apply {
+                timeZone = TimeZone.getTimeZone("UTC")
+            }
         }
 
         private fun formatForAxis(raw: String, displayFormat: SimpleDateFormat): String {

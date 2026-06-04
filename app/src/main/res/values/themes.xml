@@ -2,6 +2,8 @@
     <style name="Base.Theme.SMCAIOT" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorPrimary">@color/principal</item>
         <item name="colorOnPrimary">@color/white</item>
+        <item name="colorSurface">@color/white</item>
+        <item name="colorOnSurface">#212121</item>
 
         <item name="chipStyle">@style/CustomChipStyle</item>
     </style>
@@ -10,13 +12,26 @@
 
     <style name="CustomChipStyle" parent="Widget.Material3.Chip.Filter">
         <item name="android:textColor">@color/chip_text_color_selector</item>
-
         <item name="chipBackgroundColor">@color/chip_background_color_selector</item>
-
         <item name="chipStrokeColor">@android:color/transparent</item>
         <item name="chipStrokeWidth">0dp</item>
-
         <item name="checkedIconVisible">false</item>
+    </style>
 
+    <style name="Theme.MaterialCalendar.Personalizado" parent="ThemeOverlay.MaterialComponents.MaterialCalendar">
+        <item name="materialCalendarHeaderLayout">@style/CalendarioHeaderClaro</item>
+        <item name="colorPrimary">@color/principal</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorSurface">@color/white</item>
+        <item name="colorOnSurface">#212121</item>
+        <item name="shapeAppearanceMediumComponent">@style/EsquinasRedondeadasDatePicker</item>
+    </style>
+
+    <style name="CalendarioHeaderClaro" parent="Widget.MaterialComponents.MaterialCalendar.HeaderLayout">
+        <item name="backgroundTint">@color/principal</item>
+    </style>
+
+    <style name="EsquinasRedondeadasDatePicker">
+        <item name="cornerSize">16dp</item>
     </style>
 </resources>

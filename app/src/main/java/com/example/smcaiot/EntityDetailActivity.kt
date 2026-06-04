@@ -29,9 +29,11 @@ import java.net.ConnectException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
+import java.util.concurrent.TimeUnit
 
 class EntityDetailActivity : AppCompatActivity() {
 
@@ -59,14 +61,15 @@ class EntityDetailActivity : AppCompatActivity() {
     private val authToken: String
         get() = SessionManager.getToken() ?: ""
 
+    // Periodo predefinido
     private var currentAmount: Int = 1
     private var currentUnit: String = "month"
 
+    // Rango personalizado de fechas
     private var isCustomRange: Boolean = false
-    private var customDateFrom: String? = null
-    private var customDateTo: String? = null
     private var customChip: Chip? = null
 
+    // Modo de vista actual
     private var currentViewMode: String = VIEW_MODE_CHART
     private var lastChartItems: List<SensorChartItem> = emptyList()
 
@@ -204,8 +207,6 @@ class EntityDetailActivity : AppCompatActivity() {
                 isChecked = (option.amount == currentAmount && option.unit == currentUnit && !isCustomRange)
                 setOnClickListener {
                     isCustomRange = false
-                    customDateFrom = null
-                    customDateTo = null
                     currentAmount = option.amount
                     currentUnit = option.unit
                     customChip?.text = "Personalizado"
@@ -232,25 +233,46 @@ class EntityDetailActivity : AppCompatActivity() {
     private fun showDateRangePicker() {
         if (supportFragmentManager.findFragmentByTag("date_range_picker") != null) return
 
+        val config = resources.configuration
+        val originalLocale = config.locales[0]
+        Locale.setDefault(Locale("es"))
+        config.setLocale(Locale("es"))
+        resources.updateConfiguration(config, resources.displayMetrics)
+
         val picker = MaterialDatePicker.Builder.dateRangePicker()
             .setTitleText("Seleccionar rango de fechas")
+            .setTheme(R.style.Theme_MaterialCalendar_Personalizado)
             .build()
+
+        config.setLocale(originalLocale)
+        resources.updateConfiguration(config, resources.displayMetrics)
 
         picker.addOnPositiveButtonClickListener { selection ->
             val startMillis = selection.first
             val endMillis = selection.second
 
             if (startMillis != null && endMillis != null) {
-                val isoFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
-                isoFormat.timeZone = TimeZone.getTimeZone("UTC")
+                // CALCULAMOS LOS DÍAS DESDE LA FECHA SELECCIONADA HASTA HOY
+                val today = Calendar.getInstance().apply {
+                    set(Calendar.HOUR_OF_DAY, 23)
+                    set(Calendar.MINUTE, 59)
+                    set(Calendar.SECOND, 59)
+                }.timeInMillis
 
-                val displayFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+                val diffInMs = today - startMillis
+                var diffInDays = TimeUnit.MILLISECONDS.toDays(diffInMs).toInt()
 
-                customDateFrom = isoFormat.format(Date(startMillis))
-                customDateTo = isoFormat.format(Date(endMillis + 86_399_999L))
+                // Si por alguna razón da 0, forzamos mínimo 1 día atrás
+                if (diffInDays <= 0) diffInDays = 1
 
+                // Inyectamos el cálculo en el filtro que la API sí entiende
+                currentAmount = diffInDays
+                currentUnit = "day"
                 isCustomRange = true
 
+                val displayFormat = SimpleDateFormat("dd/MM/yyyy", Locale("es")).apply {
+                    timeZone = TimeZone.getTimeZone("UTC")
+                }
                 val fromDisplay = displayFormat.format(Date(startMillis))
                 val toDisplay = displayFormat.format(Date(endMillis))
                 customChip?.text = "$fromDisplay - $toDisplay"
@@ -273,31 +295,21 @@ class EntityDetailActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             try {
-                Log.d("EntityDetail", "isCustomRange=$isCustomRange, dateFrom=$customDateFrom, dateTo=$customDateTo, amount=$currentAmount, unit=$currentUnit")
+                Log.d("EntityDetail", "Llamando API adaptada: amount=$currentAmount, unit=$currentUnit")
 
-                val response = if (isCustomRange && customDateFrom != null && customDateTo != null) {
-                    Log.d("EntityDetail", ">> Llamando API con rango personalizado: dateFrom=$customDateFrom, dateTo=$customDateTo")
-                    RetrofitClient.apiService.getHistoricalSensors(
-                        entityId = entityId,
-                        amount = 12,
-                        unit = "month",
-                        dateFrom = customDateFrom,
-                        dateTo = customDateTo,
-                        authorization = authToken
-                    )
-                } else {
-                    Log.d("EntityDetail", ">> Llamando API con periodo: amount=$currentAmount, unit=$currentUnit")
-                    RetrofitClient.apiService.getHistoricalSensors(
-                        entityId = entityId,
-                        amount = currentAmount,
-                        unit = currentUnit,
-                        authorization = authToken
-                    )
-                }
+                // Enviamos siempre amount y unit calculados, dejando las fechas nativas de la API tranquilas
+                val response = RetrofitClient.apiService.getHistoricalSensors(
+                    entityId = entityId,
+                    amount = currentAmount,
+                    unit = currentUnit,
+                    dateFrom = null,
+                    dateTo = null,
+                    authorization = authToken
+                )
 
                 progressBar.visibility = View.GONE
 
-                Log.d("EntityDetail", "Response code=${response.code()}, body values count=${response.body()?.values?.size ?: "null"}")
+                Log.d("EntityDetail", "Response code=${response.code()}, items=${response.body()?.values?.size ?: 0}")
 
                 if (response.isSuccessful) {
                     val body = response.body()
@@ -306,7 +318,9 @@ class EntityDetailActivity : AppCompatActivity() {
                         ErrorStateHelper.hide(layoutErrorState)
                         tvLastTimestamp.text = "Última lectura: ${body.values.first().timestamp ?: ""}"
                         lastChartItems = buildChartItems(body)
-                        chartAdapter.updatePeriod(currentUnit, currentAmount)
+
+                        chartAdapter.updatePeriod(currentUnit, currentAmount, isCustomRange)
+
                         if (currentViewMode == VIEW_MODE_CHART) {
                             chartAdapter.updateData(lastChartItems)
                         } else {
