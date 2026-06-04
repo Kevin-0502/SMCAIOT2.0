@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.util.Log
 import android.view.MenuItem
 import android.view.View
+import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -19,6 +20,7 @@ import com.example.smcaiot.network.SensorTableAdapter
 import com.example.smcaiot.network.SessionManager
 import com.example.smcaiot.ui.ErrorStateHelper
 import com.example.smcaiot.ui.ErrorType
+import com.google.android.material.button.MaterialButton
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 import com.google.android.material.datepicker.MaterialDatePicker
@@ -57,17 +59,14 @@ class EntityDetailActivity : AppCompatActivity() {
     private val authToken: String
         get() = SessionManager.getToken() ?: ""
 
-    // Periodo predefinido (siempre tiene valores válidos)
     private var currentAmount: Int = 1
     private var currentUnit: String = "month"
 
-    // Rango personalizado de fechas
     private var isCustomRange: Boolean = false
     private var customDateFrom: String? = null
     private var customDateTo: String? = null
     private var customChip: Chip? = null
 
-    // Modo de vista actual
     private var currentViewMode: String = VIEW_MODE_CHART
     private var lastChartItems: List<SensorChartItem> = emptyList()
 
@@ -118,6 +117,21 @@ class EntityDetailActivity : AppCompatActivity() {
         setupViewModeChips()
         setupPeriodChips()
         loadHistoricalData()
+
+        val layoutFiltros: LinearLayout = findViewById(R.id.layoutFiltros)
+        val btnToggleFiltros: MaterialButton = findViewById(R.id.btnToggleFiltros)
+
+        btnToggleFiltros.setOnClickListener {
+            if (layoutFiltros.visibility == View.VISIBLE) {
+                layoutFiltros.visibility = View.GONE
+                btnToggleFiltros.text = "Mostrar filtros"
+                btnToggleFiltros.setIconResource(android.R.drawable.arrow_down_float)
+            } else {
+                layoutFiltros.visibility = View.VISIBLE
+                btnToggleFiltros.text = "Ocultar filtros"
+                btnToggleFiltros.setIconResource(android.R.drawable.arrow_up_float)
+            }
+        }
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -127,8 +141,6 @@ class EntityDetailActivity : AppCompatActivity() {
         }
         return super.onOptionsItemSelected(item)
     }
-
-    // ── Vista: Gráficas / Tabla ──────────────────────────────────────
 
     private fun setupViewModeChips() {
         data class ViewModeOption(val label: String, val mode: String)
@@ -173,8 +185,6 @@ class EntityDetailActivity : AppCompatActivity() {
         }
     }
 
-    // ── Periodo: chips predefinidos + personalizado ──────────────────
-
     private fun setupPeriodChips() {
         data class PeriodOption(val label: String, val amount: Int, val unit: String)
         val presetOptions = listOf(
@@ -193,7 +203,6 @@ class EntityDetailActivity : AppCompatActivity() {
                 isCheckedIconVisible = false
                 isChecked = (option.amount == currentAmount && option.unit == currentUnit && !isCustomRange)
                 setOnClickListener {
-                    // Cambiar a periodo predefinido
                     isCustomRange = false
                     customDateFrom = null
                     customDateTo = null
@@ -206,7 +215,6 @@ class EntityDetailActivity : AppCompatActivity() {
             chipGroupPeriod.addView(chip)
         }
 
-        // Chip "Personalizado" que abre el DateRangePicker
         customChip = Chip(this).apply {
             text = "Personalizado"
             isCheckable = true
@@ -222,7 +230,6 @@ class EntityDetailActivity : AppCompatActivity() {
     }
 
     private fun showDateRangePicker() {
-        // Evitar mostrar el picker si ya hay uno abierto
         if (supportFragmentManager.findFragmentByTag("date_range_picker") != null) return
 
         val picker = MaterialDatePicker.Builder.dateRangePicker()
@@ -258,8 +265,6 @@ class EntityDetailActivity : AppCompatActivity() {
             Log.e("EntityDetail", "Error al mostrar DateRangePicker", e)
         }
     }
-
-    // ── Carga de datos ──────────────────────────────────────────────
 
     private fun loadHistoricalData() {
         progressBar.visibility = View.VISIBLE
@@ -308,14 +313,12 @@ class EntityDetailActivity : AppCompatActivity() {
                             tableAdapter.updateData(lastChartItems)
                         }
                     } else {
-                        // Sin datos para el rango seleccionado
                         layoutContent.visibility = View.GONE
                         ErrorStateHelper.show(layoutErrorState, ErrorType.NO_DATA) {
                             showDateRangePicker()
                         }
                     }
                 } else {
-                    // Error de la API (400, 500, etc.)
                     layoutContent.visibility = View.GONE
                     ErrorStateHelper.show(
                         layoutErrorState,
@@ -390,5 +393,4 @@ class EntityDetailActivity : AppCompatActivity() {
             )
         }
     }
-
 }

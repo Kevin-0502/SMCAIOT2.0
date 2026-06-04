@@ -81,6 +81,7 @@
                 app:boxStrokeWidth="0dp"
                 app:boxStrokeWidthFocused="0dp"
                 app:hintTextColor="#274292"
+                app:placeholderTextColor="#274292"
                 app:startIconDrawable="@drawable/ic_profile"
                 app:startIconTint="#274292">
 
@@ -112,6 +113,7 @@
                 app:endIconMode="password_toggle"
                 app:endIconTint="#274292"
                 app:hintTextColor="#274292"
+                app:placeholderTextColor="#274292"
                 app:startIconDrawable="@drawable/ic_lock"
                 app:startIconTint="#274292">
 
@@ -144,6 +146,7 @@
                 android:layout_height="54dp"
                 android:layout_marginTop="24dp"
                 android:text="Ingresar"
+                android:textColor="#FFFFFF"
                 android:textAllCaps="false"
                 android:textSize="16sp"
                 android:textStyle="bold"
