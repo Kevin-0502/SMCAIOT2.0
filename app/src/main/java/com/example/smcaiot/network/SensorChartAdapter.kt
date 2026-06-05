@@ -1,5 +1,6 @@
 package com.example.smcaiot.network
 
+import android.content.Context
 import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.View
@@ -9,11 +10,14 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.smcaiot.R
 import com.example.smcaiot.models.SensorChartItem
 import com.github.mikephil.charting.charts.LineChart
+import com.github.mikephil.charting.components.MarkerView
 import com.github.mikephil.charting.components.XAxis
 import com.github.mikephil.charting.data.Entry
 import com.github.mikephil.charting.data.LineData
 import com.github.mikephil.charting.data.LineDataSet
 import com.github.mikephil.charting.formatter.ValueFormatter
+import com.github.mikephil.charting.highlight.Highlight
+import com.github.mikephil.charting.utils.MPPointF
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.TimeZone
@@ -117,7 +121,7 @@ class SensorChartAdapter(
             val dataSet = LineDataSet(chartEntries, item.name).apply {
                 color = lineColor
                 setCircleColor(lineColor)
-                circleRadius = 2f
+                circleRadius = 3f
                 lineWidth = 2f
                 setDrawValues(false)
                 setDrawCircles(item.entries.size <= 30)
@@ -125,6 +129,10 @@ class SensorChartAdapter(
                 fillColor = lineColor
                 fillAlpha = 30
                 setDrawFilled(true)
+
+                highlightLineWidth = 1.2f
+                highLightColor = Color.parseColor("#B0BEC5")
+                setDrawHorizontalHighlightIndicator(false)
             }
 
             val displayFormat = if (isCustomRange) {
@@ -137,7 +145,6 @@ class SensorChartAdapter(
 
             val formatter = object : ValueFormatter() {
                 override fun getFormattedValue(value: Float): String {
-                    // CORRECCIÓN: Validamos que solo acepte números enteros exactos (sin decimales intermedios defectuosos)
                     val index = value.toInt()
                     if (value % 1f != 0f || index < 0 || index >= timestamps.size) return ""
                     val raw = timestamps[index]
@@ -145,7 +152,6 @@ class SensorChartAdapter(
                 }
             }
 
-            // Calculamos un número prudente de etiquetas según la densidad
             val maxLabels = when {
                 timestamps.size <= 5 -> timestamps.size
                 else -> 5
@@ -162,21 +168,22 @@ class SensorChartAdapter(
                 setDrawGridBackground(false)
                 setNoDataText("Sin datos")
 
+                val mv = CustomMarkerView(context, timestamps, item.unit)
+                mv.chartView = this
+                marker = mv
+
                 xAxis.apply {
                     position = XAxis.XAxisPosition.BOTTOM
                     setDrawGridLines(false)
                     setDrawLabels(true)
                     valueFormatter = formatter
 
-                    // CORRECCIÓN COMPLEMENTARIA: Forzamos la granularidad a un entero y activamos su restricción
                     granularity = 1f
                     isGranularityEnabled = true
 
-                    // Configuramos rango estricto del eje X basado en los índices reales que existen
                     axisMinimum = 0f
                     axisMaximum = if (timestamps.size > 1) (timestamps.size - 1).toFloat() else 0f
 
-                    // Ponemos el conteo en false para evitar divisiones arbitrarias
                     setLabelCount(maxLabels, false)
 
                     textColor = Color.parseColor("#757575")
@@ -218,6 +225,48 @@ class SensorChartAdapter(
                 } catch (_: Exception) { }
             }
             return ""
+        }
+    }
+
+    class CustomMarkerView(
+        context: Context,
+        private val timestamps: List<String>,
+        private val unit: String
+    ) : MarkerView(context, R.layout.marker_view_chart) {
+
+        private val tvContent: TextView = findViewById(R.id.tvMarkerContent)
+
+        private val tooltipFormat = SimpleDateFormat("dd/MM/yy hh:mm a", Locale("es")).apply {
+            timeZone = TimeZone.getTimeZone("UTC")
+        }
+
+        override fun refreshContent(e: Entry?, highlight: Highlight?) {
+            if (e == null) return
+            val index = e.x.toInt()
+
+            if (index >= 0 && index < timestamps.size) {
+                val rawTimestamp = timestamps[index]
+                var formattedDateStr = rawTimestamp
+
+                for (fmt in isoFormats) {
+                    try {
+                        val date = fmt.parse(rawTimestamp)
+                        if (date != null) {
+                            formattedDateStr = tooltipFormat.format(date)
+                            break
+                        }
+                    } catch (_: Exception) {}
+                }
+
+                val valueStr = if (e.y == e.y.toLong().toFloat()) e.y.toLong().toString() else e.y.toString()
+
+                tvContent.text = "$formattedDateStr\nValor: $valueStr $unit"
+            }
+            super.refreshContent(e, highlight)
+        }
+
+        override fun getOffset(): MPPointF {
+            return MPPointF((-(width / 2)).toFloat(), (-height).toFloat() - 10f)
         }
     }
 }

@@ -61,15 +61,19 @@ class EntityDetailActivity : AppCompatActivity() {
     private val authToken: String
         get() = SessionManager.getToken() ?: ""
 
-    // Periodo predefinido
+    // Parámetros dinámicos para la consulta de la API
     private var currentAmount: Int = 1
     private var currentUnit: String = "month"
 
-    // Rango personalizado de fechas
+    // Guardado estricto de límites en milisegundos para filtrado manual en Front
+    private var customStartMillis: Long? = null
+    private var customEndMillis: Long? = null
+
+    // Control de estado del filtro dinámico
     private var isCustomRange: Boolean = false
     private var customChip: Chip? = null
 
-    // Modo de vista actual
+    // Modo de visualización de datos activo
     private var currentViewMode: String = VIEW_MODE_CHART
     private var lastChartItems: List<SensorChartItem> = emptyList()
 
@@ -207,6 +211,8 @@ class EntityDetailActivity : AppCompatActivity() {
                 isChecked = (option.amount == currentAmount && option.unit == currentUnit && !isCustomRange)
                 setOnClickListener {
                     isCustomRange = false
+                    customStartMillis = null
+                    customEndMillis = null
                     currentAmount = option.amount
                     currentUnit = option.unit
                     customChip?.text = "Personalizado"
@@ -252,27 +258,28 @@ class EntityDetailActivity : AppCompatActivity() {
             val endMillis = selection.second
 
             if (startMillis != null && endMillis != null) {
-                // CALCULAMOS LOS DÍAS DESDE LA FECHA SELECCIONADA HASTA HOY
-                val today = Calendar.getInstance().apply {
-                    set(Calendar.HOUR_OF_DAY, 23)
-                    set(Calendar.MINUTE, 59)
-                    set(Calendar.SECOND, 59)
-                }.timeInMillis
-
-                val diffInMs = today - startMillis
-                var diffInDays = TimeUnit.MILLISECONDS.toDays(diffInMs).toInt()
-
-                // Si por alguna razón da 0, forzamos mínimo 1 día atrás
-                if (diffInDays <= 0) diffInDays = 1
-
-                // Inyectamos el cálculo en el filtro que la API sí entiende
-                currentAmount = diffInDays
-                currentUnit = "day"
-                isCustomRange = true
-
                 val displayFormat = SimpleDateFormat("dd/MM/yyyy", Locale("es")).apply {
                     timeZone = TimeZone.getTimeZone("UTC")
                 }
+
+                // Guardamos los límites reales elegidos para limpiar el desastre de la API en el Front
+                customStartMillis = startMillis
+                // Le sumamos un día completo en milisegundos al límite final para abarcar las 23:59:59 de ese día
+                customEndMillis = endMillis + TimeUnit.DAYS.toMillis(1) - 1
+
+                // Calculamos el total de días desde "hoy" hasta la fecha de inicio
+                val todayMillis = System.currentTimeMillis()
+                val diffFromToday = todayMillis - startMillis
+                var totalDaysBack = TimeUnit.MILLISECONDS.toDays(diffFromToday).toInt()
+
+                // Margen de seguridad por si seleccionaron hoy o rangos muy cortos
+                if (totalDaysBack <= 0) totalDaysBack = 1
+
+                // Pedimos una ventana lo suficientemente grande para que cubra desde esa fecha vieja
+                currentAmount = totalDaysBack + 2
+                currentUnit = "day"
+                isCustomRange = true
+
                 val fromDisplay = displayFormat.format(Date(startMillis))
                 val toDisplay = displayFormat.format(Date(endMillis))
                 customChip?.text = "$fromDisplay - $toDisplay"
@@ -295,9 +302,9 @@ class EntityDetailActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             try {
-                Log.d("EntityDetail", "Llamando API adaptada: amount=$currentAmount, unit=$currentUnit")
+                Log.d("EntityDetail", "Pidiendo ventana extendida al backend: amount=$currentAmount, unit=$currentUnit")
 
-                // Enviamos siempre amount y unit calculados, dejando las fechas nativas de la API tranquilas
+                // Pedimos el total de días acumulados desde la fecha vieja hasta hoy sin enviarle dateTo
                 val response = RetrofitClient.apiService.getHistoricalSensors(
                     entityId = entityId,
                     amount = currentAmount,
@@ -309,15 +316,19 @@ class EntityDetailActivity : AppCompatActivity() {
 
                 progressBar.visibility = View.GONE
 
-                Log.d("EntityDetail", "Response code=${response.code()}, items=${response.body()?.values?.size ?: 0}")
-
                 if (response.isSuccessful) {
                     val body = response.body()
-                    if (body != null && !body.values.isNullOrEmpty()) {
+
+                    // Procesamos los ítems filtrando localmente en el Front
+                    val processedItems = if (body != null) buildChartItems(body) else emptyList()
+
+                    if (processedItems.isNotEmpty()) {
                         layoutContent.visibility = View.VISIBLE
                         ErrorStateHelper.hide(layoutErrorState)
-                        tvLastTimestamp.text = "Última lectura: ${body.values.first().timestamp ?: ""}"
-                        lastChartItems = buildChartItems(body)
+
+                        // Buscamos la última lectura real válida dentro del rango filtrado
+                        tvLastTimestamp.text = "Última lectura: ${body?.values?.firstOrNull()?.timestamp ?: ""}"
+                        lastChartItems = processedItems
 
                         chartAdapter.updatePeriod(currentUnit, currentAmount, isCustomRange)
 
@@ -327,6 +338,7 @@ class EntityDetailActivity : AppCompatActivity() {
                             tableAdapter.updateData(lastChartItems)
                         }
                     } else {
+                        // Si después de limpiar el quilombo de la API no quedó nada en esas fechas, se muestra estado vacío
                         layoutContent.visibility = View.GONE
                         ErrorStateHelper.show(layoutErrorState, ErrorType.NO_DATA) {
                             showDateRangePicker()
@@ -374,13 +386,36 @@ class EntityDetailActivity : AppCompatActivity() {
         data class Meta(val unit: String, val color: String, val displayName: String?)
         val metaMap = mutableMapOf<String, Meta>()
 
+        // Formateador ISO para parsear las marcas de tiempo que devuelve la API
+        val isoFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US).apply {
+            timeZone = TimeZone.getTimeZone("UTC")
+        }
+
         body.values?.asReversed()?.forEach { entry ->
-            val timestamp = entry.timestamp ?: return@forEach
+            val timestampStr = entry.timestamp ?: return@forEach
+
+            // FILTRADO MANUAL: Si hay rango personalizado activo, validamos la fecha aquí
+            if (isCustomRange && customStartMillis != null && customEndMillis != null) {
+                try {
+                    // Quitamos milisegundos adicionales o la 'Z' si viene al final para evitar fallos de parseo
+                    val cleanTimestamp = timestampStr.substringBefore(".")
+                    val entryDate = isoFormat.parse(cleanTimestamp)
+                    val entryMillis = entryDate?.time ?: 0L
+
+                    // Si la fecha del registro NO cae en la selección del usuario, lo ignoramos por completo
+                    if (entryMillis < customStartMillis!! || entryMillis > customEndMillis!!) {
+                        return@forEach
+                    }
+                } catch (e: Exception) {
+                    Log.e("EntityDetail", "Error al evaluar rango local para timestamp: $timestampStr", e)
+                }
+            }
+
             entry.value?.forEach { sensor ->
                 val name = sensor.name ?: return@forEach
                 val value = sensor.value ?: return@forEach
                 pointsMap.getOrPut(name) { mutableListOf() }
-                    .add(timestamp to value)
+                    .add(timestampStr to value)
                 if (!metaMap.containsKey(name)) {
                     metaMap[name] = Meta(
                         unit = sensor.unit ?: "",
@@ -391,17 +426,14 @@ class EntityDetailActivity : AppCompatActivity() {
             }
         }
 
-        val latestEntry = body.values?.firstOrNull()
-
         return pointsMap.map { (name, points) ->
             val meta = metaMap[name]
-            val latestValue = latestEntry?.value
-                ?.firstOrNull { it.name == name }?.value ?: points.lastOrNull()?.second ?: 0.0
+            val latestValue = points.lastOrNull()?.second ?: 0.0
             SensorChartItem(
                 name = name,
                 unit = meta?.unit ?: "",
                 color = meta?.color ?: "#1565C0",
-                displayName = latestEntry?.value?.firstOrNull { it.name == name }?.displayName,
+                displayName = meta?.displayName,
                 latestValue = latestValue,
                 entries = points
             )
